@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Concrete-Filled Steel Tube Column Capacity Calculator</title>
+    <!-- Import Excel processing library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            text-align: center;
+            font-size: 18px;
+            line-height: 1.5;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .input-group {
+            margin: 15px 0;
+            padding: 15px 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .input-group:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .input-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px,1fr));
+            gap: 15px;
+        }
+        .param-label {
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .param-label i { font-style: italic; }
+        input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        .file-upload {
+            border: 2px dashed #ccc;
+            padding: 15px;
+            text-align: center;
+            margin: 15px 0;
+            border-radius: 6px;
+            transition: border-color 0.2s;
+        }
+        .file-upload:hover {
+            border-color: #3498db;
+        }
+        #resultTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        #resultTable th, #resultTable td {
+            border: 1px solid #e9ecef;
+            padding: 10px;
+            text-align: center;
+        }
+        #resultTable th {
+            background-color: #f1f3f5;
+            font-weight: 600;
+        }
+        .highlight { color: #e74c3c; font-weight: bold; }
+        button {
+            padding: 10px 18px;
+            margin: 5px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        #exportBtn { display: none; background: #27ae60; }
+        .file-input-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        input[type="file"] {
+            max-width: 300px;
+            font-size: 14px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .result-message {
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+        }
+        .diagram-container {
+            margin: 15px 0;
+            padding: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        .diagram-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        h3 {
+            font-size: 24px;
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #34495e;
+        }
+        .parameter-label {
+            font-size: 20px;
+            margin-bottom: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        /* Fix input overflow issues */
+        .single-input-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .note {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        /* Style for the new table note */
+        #tableNote {
+            display: none;
+            text-align: left;
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-top: 10px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>Axial capacity of CFST columns with random overlapping pitting corrosion</h1>
+    <div class="container">
+        <div class="diagram-container">
+            <img src="Diagram.jpg" alt="CFST Column Diagram showing cross-section with local defect">
+        </div>
+
+        <!-- Single Calculation Section -->
+        <div class="input-group">
+            <h3>Single Calculation</h3>
+            <p class="parameter-label">Parameters [<i>f</i><sub>y</sub> (MPa), <i>f</i><sub>c</sub> (MPa), <i>D</i><sub>0</sub> (mm), <i>t</i><sub>0</sub> (mm), <i>L</i> (mm), <i>α</i> (°), <i>l</i> (mm), <i>h</i> (mm), <i>VLR</i>, Note]</p>
+            <div class="single-input-wrapper">
+                <input type="text" id="singleInput" placeholder="e.g. 500, 30, 150, 3, 450, 360, 225, 225, 0.1">
+            </div>
+            <p class="note">Note defaults to empty; enter "Nokpu" to ignore adverse effect of pitting corrosion.</p>
+            <button onclick="singleCalculate()">Calculate</button>
+            <div id="singleResult" class="highlight" style="margin-top:15px;"></div>
+        </div>
+
+        <!-- Batch Calculation Section -->
+        <div class="input-group">
+            <h3>Batch Calculation</h3>
+            <p class="parameter-label">Parameters [<i>f</i><sub>y</sub> (MPa), <i>f</i><sub>c</sub> (MPa), <i>D</i><sub>0</sub> (mm), <i>t</i><sub>0</sub> (mm), <i>L</i> (mm), <i>α</i> (°), <i>l</i> (mm), <i>h</i> (mm), <i>VLR</i>, Note]</p>
+            <div class="file-upload">
+                <div class="file-input-container">
+                    <input type="file" id="batchFile" accept=".xlsx,.txt,.csv">
+                    <span>Supported formats: excel, txt, CSV (9 numeric columns + optional 10th column for Note)</span>
+                </div>
+            </div>
+            <button onclick="handleBatchCalculate()">Calculate</button>
+            <button id="exportBtn" onclick="exportExcel()">Download Results</button>
+            <div id="batchResultMessage" class="result-message" style="display: none;"></div>
+            <table id="resultTable" style="display:none;">
+                <thead>
+                    <tr>
+                        <th><i>f</i><sub>y</sub> /MPa</th><th><i>f</i><sub>c</sub> /MPa</th><th><i>D</i><sub>0</sub> /mm</th><th><i>t</i><sub>0</sub> /mm</th>
+                        <th><i>L</i> /mm</th><th><i>α</i> /°</th><th><i>l</i> /mm</th><th><i>h</i> /mm</th>
+                        <th>VLR</th><th>Note</th><th><i>N</i><sub>u,PC</sub> /kN</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <!-- Added Note below the table -->
+            <div id="tableNote">Note: Adverse effect of pitting corrosion is ignored for specimens with "Nokpu" note.</div>
+        </div>
+    </div>
+
+<script>
+/**
+ * Core calculation function: Computes CFST column capacity based on input parameters.
+ */
+function calculate(params) {
+    const fy = Number(params[0]);
+    const fc = Number(params[1]);
+    const D0 = Number(params[2]);
+    const t0 = Number(params[3]);
+    const L  = Number(params[4]);
+    const alpha_deg = Number(params[5]);
+    const l = Number(params[6]);
+    const h = Number(params[7]);
+    const VLR = Number(params[8]);
+    const Note = (params[9] !== undefined && params[9] !== null)
+        ? String(params[9]).trim() : "";
+
+    if (isNaN(fy) || isNaN(fc) || isNaN(D0) || isNaN(t0) || isNaN(L) ||
+        isNaN(VLR) || isNaN(alpha_deg) || isNaN(l) || isNaN(h)) {
+        return {error: "Invalid parameter format - please use numbers only"};
+    }
+    if (D0 <= 2 * t0) return {error: "D0 must be greater than 2*t0"};
+    if (t0 <= 0)      return {error: "t0 must be positive"};
+    if (L <= 0)       return {error: "L must be positive"};
+    if (alpha_deg < 0 || alpha_deg > 360)
+        return {error: "α must be in (0°, 360°]"};
+    if (l < 0 || l > L)
+        return {error: "l must be in [0, L]"};
+    if (h < 0 || h/L > 0.5)
+        return {error: "h/L ratio out of valid range [0, 0.5]"};
+    if (VLR < 0 || VLR > 1)
+        return {error: "VLR must be in [0, 1] (fraction, e.g. 0.1 = 10%)"};
+
+    const Rc = D0 / 2 - t0;
+    const R  = Rc + t0;
+
+    const VLRmax = alpha_deg * l / (360 * L);
+    if (VLR > VLRmax + 1e-9) {
+        return {error: "VLR = " + VLR.toFixed(4) +
+                       " exceeds VLR_max = " + VLRmax.toFixed(4) +
+                       " (determined by α and l/L)"};
+    }
+
+    let de, tce;
+    if (VLR === 0 || VLRmax === 0) {
+        de  = 0;
+        tce = t0;
+    } else {
+        const term = 360 * VLR * (2 * R * t0 - t0 * t0) * L / (alpha_deg * l);
+        const radicand = R * R - term;
+        if (radicand < 0) return {error: "Invalid VLR (radicand negative)"};
+        de  = R - Math.sqrt(radicand);
+        tce = t0 - de;
+    }
+    const beta = de / t0;
+
+    const alpha_rad = alpha_deg * Math.PI / 180;
+    const h_l = Math.min(l / 4, 2 * Rc);
+    const lb  = 0.84 * Math.PI * Math.sqrt(R * t0);
+
+    const theta    = Math.min(alpha_rad / 2 + lb / Rc, Math.PI);
+    const h_theta  = Rc * (1 - Math.cos(theta) / 2);
+
+    const Es = 2e5;
+    const Ec = 22000 * Math.pow((fc + 8) / 10, 0.3);
+
+    const Ac = Math.PI * Rc * Rc;
+    const As = t => Math.PI * ((Rc + t) ** 2 - Rc * Rc);
+    const Is = t => (Math.PI / 4) * ((Rc + t) ** 4 - Rc ** 4);
+
+    const calcNu = t => {
+        const ita   = t / Rc * fy / fc;
+        const Rd_cc = Math.pow(1.67, Math.pow(1 + ita, -8)) *
+                      Math.pow((2 * Rc), -(0.112 * Math.pow(0.0005, ita)));
+        let fcm, fsm;
+        if (t === 0) {
+            fcm = fc * Rd_cc;
+            fsm = 0;
+        } else {
+            fcm = fc * Rd_cc * (1 + 52 * Math.pow(fy, 0.1) * Math.pow(fc, -0.85) *
+                       Math.pow((2 * (t + Rc) / t), -0.6));
+            fsm = 1.53 * Math.pow(fy, -0.05) *
+                  (1 - 0.002 * 2 * (t + Rc) / t) * fy;
+        }
+        const Nuc = fcm * Ac + fsm * As(t);
+        const Ncr = (Math.PI ** 2 * (Es * Is(t) +
+                   0.6 * Ec * (Math.PI / 4) * Rc ** 4)) / (L * L);
+        const N0  = fy * As(t) + fc * Ac;
+        const naga = Math.pow(N0 / Ncr, 0.5);
+        const Rd_s = Math.min(1.2 * Math.exp(-0.7 * naga), 1);
+        return Rd_s * Nuc / 1000;
+    };
+
+    const nu_t0  = calcNu(t0);
+    const nu_tce = calcNu(tce);
+
+    let Acd;
+    if (h_l <= h_theta) {
+        const lb0     = (Math.PI - alpha_rad / 2) * Rc;
+        const lbx     = Math.min(lb, lb0);
+        const x_R_raw = (lb / h_l) * (h_l - Rc);
+        const x_R     = Math.max(x_R_raw, 0);
+        const term1 = h_l * lbx * (1 - h_l / (3 * Rc));
+        const term2 = alpha_rad * h_l * (Rc - h_l / 2);
+        const term3 = (h_l * h_l / (lb * lb)) *
+                      (Math.PI - (5 * x_R) / (6 * Rc)) * x_R * x_R;
+        Acd = term1 + term2 + term3;
+    } else {
+        const theta_term = theta - (Math.sin(theta) * Math.cos(theta)) / 3;
+        Acd = theta_term * Rc * Rc;
+    }
+
+    const phi_p = 1 + 0.6 * beta * Math.sqrt(l / L) * (0.5 - h / L);
+    const Nu_UC = phi_p * ((Acd / Ac) * nu_tce + (1 - Acd / Ac) * nu_t0);
+
+    let kpu;
+    if (VLRmax > 1e-12 && VLR > 1e-12 && VLR < VLRmax - 1e-12) {
+        kpu = 1 - 1.32 * VLR * (1 - VLR / VLRmax);
+    } else {
+        kpu = 1;
+    }
+
+    const iskpu = Note !== "";
+    const Nu_PC = iskpu ? Nu_UC : kpu * Nu_UC;
+
+    return { value: Nu_PC, error: null };
+}
+
+function singleCalculate() {
+    const input = document.getElementById('singleInput').value.trim();
+
+    if (!input) {
+        document.getElementById('singleResult').innerHTML =
+            '<p style="color:red">Error: Please enter parameters</p>';
+        return;
+    }
+
+    const tokens = input.split(/[,\s]+/).filter(s => s.length > 0);
+
+    if (tokens.length !== 9 && tokens.length !== 10) {
+        document.getElementById('singleResult').innerHTML =
+            '<p style="color:red">Error: Please enter 9 numeric parameters ' +
+            'plus an optional Note (received ' + tokens.length +
+            ' tokens)</p>';
+        return;
+    }
+
+    const numParams = tokens.slice(0, 9).map(Number);
+    const Note = tokens.length === 10 ? tokens[9] : "";
+    const result = calculate([...numParams, Note]);
+
+    const isUPC = Note !== "";
+    document.getElementById('singleResult').innerHTML = result.error ?
+        '<p style="color:red">' + result.error + '</p>' :
+        '<p><i>N</i><sub>u,PC</sub> = <span>' +
+        result.value.toFixed(2) + '</span> kN' +
+        (isUPC ? ' &nbsp;(Adverse effect of pitting corrosion ignored)' : '') + '</p>';
+}
+
+let batchResults = [];
+
+async function handleBatchCalculate() {
+    const file = document.getElementById('batchFile').files[0];
+    if (!file) return alert("Please upload a file first");
+
+    const rawData = await readFile(file);
+
+    // FIXED: Dynamically check if the first row is a header before slicing
+    let dataRows = [];
+    if (rawData.length > 0) {
+        // If the first cell of the first row is not a number, it's a header.
+        if (isNaN(Number(rawData[0][0]))) {
+            dataRows = rawData.slice(1);
+        } else {
+            // It's already data (like the txt file provided), keep the first row
+            dataRows = rawData;
+        }
+    }
+
+    batchResults = dataRows.map(row => {
+        const numParams = row.slice(0, 9).map(cell => Number(cell));
+        const Note = (row[9] !== undefined && row[9] !== null)
+            ? String(row[9]).trim() : "";
+        const result = calculate([...numParams, Note]);
+        return [...numParams, Note,
+                result.error ? "Error" : result.value];
+    });
+
+    const resultMessage = document.getElementById('batchResultMessage');
+    const resultTable   = document.getElementById('resultTable');
+    const tableNote     = document.getElementById('tableNote');
+
+    if (batchResults.length <= 200) {
+        const tbody = document.querySelector('#resultTable tbody');
+        tbody.innerHTML = batchResults.map(row => `
+            <tr>
+                <td>${row[0]?.toFixed(2)  || ''}</td>
+                <td>${row[1]?.toFixed(2)  || ''}</td>
+                <td>${row[2]?.toFixed(2)  || ''}</td>
+                <td>${row[3]?.toFixed(2)  || ''}</td>
+                <td>${row[4]?.toFixed(2)  || ''}</td>
+                <td>${row[5]?.toFixed(2)  || ''}</td>
+                <td>${row[6]?.toFixed(2)  || ''}</td>
+                <td>${row[7]?.toFixed(2)  || ''}</td>
+                <td>${row[8]?.toFixed(4)  || ''}</td>
+                <td>${row[9] || ''}</td>
+                <td>${row[10] === "Error" ? "Error" : row[10]?.toFixed(2) || ''}</td>
+            </tr>
+        `).join('');
+
+        resultTable.style.display = 'table';
+        tableNote.style.display = 'block'; // Show the added note
+        resultMessage.style.display = 'none';
+    } else {
+        resultTable.style.display = 'none';
+        tableNote.style.display = 'none';
+        resultMessage.style.display = 'block';
+        resultMessage.innerHTML = 'Calculation complete. Processed ' +
+            batchResults.length + ' specimens. Results table hidden due to ' +
+            'size (over 200 entries). Please download the results file.';
+    }
+
+    document.getElementById('exportBtn').style.display = 'inline-block';
+}
+
+async function readFile(file) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            let data = [];
+
+            if (file.name.endsWith('.xlsx')) {
+                const workbook = XLSX.read(e.target.result, { type: 'array' });
+                data = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]],
+                                                 { header: 1 });
+                data = data.map(row => row.map(cell => String(cell).trim()));
+            }
+            else {
+                data = e.target.result.split('\n')
+                    .map(line => line.split(/[,\t]/))
+                    .map(row => row.map(cell =>
+                        typeof cell === 'string' ? cell.trim() : String(cell).trim()));
+            }
+
+            const filteredData = data.filter(row => {
+                return !row.every(cell => cell === '' || cell === undefined || cell === null);
+            });
+
+            resolve(filteredData);
+        };
+
+        if (file.name.endsWith('.xlsx')) {
+            reader.readAsArrayBuffer(file);
+        } else {
+            reader.readAsText(file);
+        }
+    });
+}
+
+function exportExcel() {
+    const ws = XLSX.utils.json_to_sheet(batchResults.map(row => ({
+        "fy /MPa":          row[0],
+        "fc /MPa":          row[1],
+        "D0 /mm":           row[2],
+        "t0 /mm":           row[3],
+        "L /mm":            row[4],
+        "α /°":             row[5],
+        "l /mm":            row[6],
+        "h /mm":            row[7],
+        "VLR":              row[8],
+        "Note":             row[9],
+        "Nu_PC /kN":        row[10]
+    })));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "CFST_Results");
+    XLSX.writeFile(wb, "CFST_Batch_Results.xlsx");
+}
+</script>
+</body>
+</html>
